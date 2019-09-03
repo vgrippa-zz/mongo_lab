@@ -1,0 +1,92 @@
+---
+- hosts: pg-master
+  gather_facts: yes
+  become: true
+  roles:
+    - pg
+    - pg-master
+    - pmm-client
+    - pmm-client-pg
+
+- hosts: pg-replica
+  gather_facts: yes
+  become: true
+  roles:
+    - pg
+    - pg-replica
+    - pmm-client
+    - pmm-client-pg
+
+- hosts: app-server
+  gather_facts: yes
+  become: true
+  roles:
+    - sysbench
+    - sysbench-pg
+    - sysbench-mysql
+
+- hosts: main-server
+  gather_facts: yes
+  become: true
+  roles:
+    - docker-host
+    - pmm-server
+
+- hosts: pxc-node1
+  vars:
+    hostname: 'node1'
+    ip_address: '10.0.0.21'
+  gather_facts: yes
+  become: true
+  roles:
+    - percona-repo
+    - pxc-node
+    - mysql-root-pwd
+    - mysql-my-cnf
+    - pxc-sst-user
+    - mysql-plugins
+    - mysql-replication-user
+    - mysql-pmm-user
+    - pmm-client
+    - pmm-client-mysql
+    - mysql-sysbench
+
+- hosts: pxc-node2
+  vars:
+    hostname: 'node2'
+    ip_address: '10.0.0.22'
+  gather_facts: yes
+  become: true
+  roles:
+    - percona-repo
+    - pxc-node
+    - mysql-my-cnf
+    - pmm-client
+    - pmm-client-mysql
+
+- hosts: pxc-node3
+  vars:
+    hostname: 'node3'
+    ip_address: '10.0.0.23'
+  gather_facts: yes
+  become: true
+  roles:
+    - percona-repo
+    - pxc-node
+    - mysql-my-cnf
+    - pmm-client
+    - pmm-client-mysql
+
+- hosts: mysql-replica
+  gather_facts: yes
+  become: true
+  roles:
+    - percona-repo
+    - mysql-replica
+    - mysql-root-pwd
+    - mysql-my-cnf
+    - mysql-plugins
+    - mysql-replicate
+    - pmm-client
+    - pmm-client-mysql
+

@@ -1,0 +1,9 @@
+rs.initiate({
+    _id: "rs_cfg",
+    version: 1,
+    members: [
+       { _id: 0, host : "{{ inventory_hostname }}:{{ mongoc_port }}" }
+       ]
+})
+sleep(3000)
+db.createUser({ user: "admin" , pwd: "{{ mongo_admin_pass }}", roles: ["root"]}, { w: 0 , wtimeout: 5000 } )

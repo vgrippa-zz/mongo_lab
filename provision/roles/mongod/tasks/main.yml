@@ -1,0 +1,119 @@
+---
+# This role deploys the mongod processes and sets up the replication set.
+
+  ## Create directories
+
+- name: create data directory for mongodb
+  file: path={{ mongodb_datadir_prefix }}/mongo-{{ inventory_hostname }} state=directory  owner=mongod group=mongod
+  become: true
+  delegate_to: "{{item}}"
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: create log directory for mongodb
+  file: path=/var/log/mongo state=directory owner=mongod group=mongod
+  become: true
+
+- name: create run directory for mongodb
+  file: path=/var/run/mongo state=directory owner=mongod group=mongod
+  become: true
+
+ ## Deploy Mongo management file (start, stop, restart)
+
+- name: Create the mongodb startup file
+  template: src=mongod.j2 dest={{ mongodb_datadir_prefix }}mongod-{{ inventory_hostname }} mode=0655 owner=mongod group=mongod
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+## Deploy Mongo configuration file
+
+- name: Create the mongodb configuration file with no security (needed to create root user)
+  template: src=mongod_nosec.conf.j2 dest=/etc/mongod-{{ inventory_hostname }}.conf owner=mongod group=mongod
+  become: true
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['replication_servers'] }}"
+
+## Deploy create user file
+- name: Create the user file
+  become: true
+  template: src=create_user.j2 dest=/tmp/create_user.js owner=mongod group=mongod
+
+  ## Start MongoDB with no security and create user
+- name: Restart the mongodb if needed
+  command: removes=/var/lock/subsys/mongod-{{ inventory_hostname }} {{ mongodb_datadir_prefix }}mongod-{{ inventory_hostname }}  stop
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Start the mongodb service
+  command: creates=/var/lock/subsys/mongod-{{ inventory_hostname }} {{ mongodb_datadir_prefix }}mongod-{{ inventory_hostname }}  start
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Pause for a while
+  pause: seconds=5
+
+- name: Create user
+  shell: /usr/bin/mongo  localhost:{{ mongod_port }}/admin  /tmp/create_user.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+  ## Start MongoDB with security
+
+- name: Create the mongodb configuration file
+  template: src=mongod.conf.j2 dest=/etc/mongod-{{ inventory_hostname }}.conf owner=mongod group=mongod
+  become: true
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Copy the keyfile for authentication
+  become: true
+  copy: src=secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Restart the mongodb service with security
+  command: removes=/var/lock/subsys/mongod-{{ inventory_hostname }} {{ mongodb_datadir_prefix }}mongod-{{ inventory_hostname }}  stop
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Pause for a while
+  pause: seconds=2
+
+- name: Restart the mongodb service with security
+  command: creates=/var/lock/subsys/mongod-{{ inventory_hostname }} {{ mongodb_datadir_prefix }}mongod-{{ inventory_hostname }}  start
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Pause for a while
+  pause: seconds=5
+
+- name: Create the file to initialize the mongod replica set
+  become: true
+  template: src=repset_init.j2 dest=/tmp/repset_init{{ mongod_port }}.js owner=mongod group=mongod
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Initialize the replication set
+  shell: /usr/bin/mongo  localhost:{{ mongod_port }}/admin -umongoadmin -pmongoadmin  /tmp/repset_init{{ mongod_port }}.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+  ignore_errors: yes
+
+ ## Deploy MongoDB add node script and execute it
+
+- name: Create the add node file
+  become: true
+  template: src=repset_addnode.j2 dest=/tmp/repset_addnode{{ mongod_port }}.js owner=mongod group=mongod
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+
+- name: Add nodes to the replica set
+  shell: /usr/bin/mongo  localhost:{{ mongod_port }}/admin -umongoadmin -pmongoadmin  /tmp/repset_addnode{{ mongod_port }}.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['replication_servers'] }}"
+

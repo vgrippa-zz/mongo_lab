@@ -1,0 +1,7 @@
+127.0.0.1 localhost
+
+{% for host in groups['all'] %}
+{% if hostvars[host]['ansible_eth1']['active'] %}
+{{ hostvars[host]['ansible_eth1']['ipv4']['address'] }}       {{ host }}
+{% endif %}
+{% endfor %}

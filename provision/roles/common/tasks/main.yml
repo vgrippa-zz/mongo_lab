@@ -1,0 +1,51 @@
+---
+# This Playbook runs all the common plays in the deployment
+
+#- name: Add IP address of all hosts to all hosts
+#  lineinfile:
+#    dest: /etc/hosts
+#    regexp: '.*{{ item }}$'
+#    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{item}}"
+#    state: present
+#  when: hostvars[item].ansible_host is defined
+#  with_items: "{{ groups['all'] }}"
+
+- name: Create the hosts file for all machines
+  template: src=hosts.j2 dest=/etc/hosts
+
+- name: Install the EPEL Repo
+  yum:
+    name: http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    state: present
+
+- name: Create the GPG key for EPEL
+  copy: src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
+
+- name: Create the mongod user
+  user: name=mongod comment="MongoD"
+
+- name: Create the data directory for the namenode metadata
+  file: path={{ mongodb_datadir_prefix }} owner=mongod group=mongod state=directory
+
+- name: Install the Percona Repo
+  yum:
+    name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+    state: present
+
+- name: Install the mongodb package
+  yum: name={{ item }} state=installed
+  with_items:
+   - Percona-Server-MongoDB-36
+
+#- name: Create the iptables file
+#  template: src=iptables.j2 dest=/etc/sysconfig/iptables
+#  notify: restart iptables
+
+- selinux:
+      state: disabled
+      configfile: /etc/selinux/config
+
+- name: Set SELinux in permissive mode until the machine is rebooted
+  command: setenforce 0
+  ignore_errors: true
+  changed_when: false

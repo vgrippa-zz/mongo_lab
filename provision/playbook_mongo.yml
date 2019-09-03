@@ -1,0 +1,39 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  roles:
+  - common
+  - pmm-client
+
+- hosts: mongo_servers
+  gather_facts: yes
+  become: true
+  roles:
+  - role: mongod
+
+- hosts: mongoc_servers
+  gather_facts: yes
+  become: true
+  roles:
+  - role: mongoc
+
+- hosts: mongos_servers
+  gather_facts: yes
+  become: true
+  roles:
+  - role: mongos
+
+#- hosts: mongo_servers
+#  gather_facts: yes
+#  become: true
+#  tasks:
+#  - import_tasks: roles/mongod/tasks/shards.yml
+
+- hosts: pmm_client_servers
+  gather_facts: yes
+  become: true
+  ignore_errors: true
+  roles:
+    - pmm-client-mongo
+

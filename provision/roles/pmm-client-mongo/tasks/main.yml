@@ -1,0 +1,39 @@
+---
+# tasks file for provision/roles/pmm-client-mongo
+- name: Create the file to create PMM user in MongoDB
+  template: src=create_user.j2 dest=/tmp/create_user.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['pmm_client_servers'] }}"
+  tags: pmm-client-mongo
+
+- name: Create the file to add PMM service
+  template: src=add_pmm_service.j2 dest=/tmp/add_pmm_service.sh
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['pmm_client_servers'] }}"
+  tags: pmm-client-mongo
+
+- name: Create the file to set the profiling on all mongod servers
+  template: src=set_profiling.j2 dest=/tmp/set_profiling.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['pmm_client_servers'] }}"
+  tags: pmm-client-mongo
+
+
+- name: Set profiling
+  shell: /usr/bin/mongo  localhost:{{ mongod_port }}/admin -umongoadmin -pmongoadmin  /tmp/set_profiling.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['pmm_client_servers'] }}"
+  tags: pmm-client-mongo
+
+- name: Create user
+  shell: /usr/bin/mongo  localhost:{{ mongod_port }}/admin -umongoadmin -pmongoadmin  /tmp/create_user.js
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['pmm_client_servers'] }}"
+  tags: pmm-client-mongo
+
+- name: Configure PMM to monitor MongoDB
+  shell: bash /tmp/add_pmm_service.sh
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['pmm_client_servers'] }}"
+  tags: pmm-client-mongo
+

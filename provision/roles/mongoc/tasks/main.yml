@@ -1,0 +1,33 @@
+---
+# This playbook  deploys the mongodb configurationdb  servers
+
+- name: Create data directory for mongoc configuration server
+  file: path={{ mongodb_datadir_prefix }}/configdb state=directory owner=mongod group=mongod
+
+- name: Create the mongo configuration server startup file
+  template: src=mongoc.j2 dest={{ mongodb_datadir_prefix }}/mongoc mode=0655 owner=mongod group=mongod
+
+
+- name: Create the mongo configuration server file
+  template: src=mongoc.conf.j2 dest=/etc/mongoc.conf owner=mongod group=mongod
+
+
+- name: Copy the keyfile for authentication
+  copy: src=roles/mongod/files/secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+
+- name: Start the mongo configuration server service
+  command: creates=/var/lock/subsys/mongoc {{ mongodb_datadir_prefix }}/mongoc start
+
+- name: pause
+  pause: seconds=5
+
+- name: Create the file to initialize the mongod replica set
+  become: true
+  template: src=repset_init.j2 dest=/tmp/repset_init.js owner=mongod group=mongod
+
+- name: Pause for a while
+  pause: seconds=2
+
+- name: Initialize the replication set and create admin user
+  shell: /usr/bin/mongo  localhost:{{ mongoc_port }}/admin  /tmp/repset_init.js
+

@@ -1,0 +1,4 @@
+{% for host in groups['pmm_client_servers'] %}
+  pmm-admin add mongodb --uri mongodb://mongodb_exporter:sEcrEt@localhost:{{ hostvars[host]['mongod_port'] }}/admin --cluster MongoCluster {{ ansible_hostname }}-{{ hostvars[host]['mongod_port']  }}
+  pmm-admin repair
+{% endfor %}

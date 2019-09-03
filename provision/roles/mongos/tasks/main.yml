@@ -1,0 +1,50 @@
+---
+#This Playbook configures the mongos service of mongodb
+
+- name: Create the mongos startup file
+  template: src=mongos.j2 dest={{ mongodb_datadir_prefix }}/mongos mode=0655 owner=mongod group=mongod
+
+
+- name: Create the mongos configuration file
+  template: src=mongos.conf.j2 dest=/etc/mongos.conf owner=mongod group=mongod
+
+- name: Copy the keyfile for authentication
+  copy: src=roles/mongod/files/secret dest={{ mongodb_datadir_prefix }}/secret owner=mongod group=mongod mode=0400
+
+- name: Start the mongos service
+  command: creates=/var/lock/subsys/mongos {{ mongodb_datadir_prefix }}/mongos start
+
+- name: pause
+  pause: seconds=4
+
+- name: copy the file for shard test
+  template: src=testsharding.j2 dest=/tmp/testsharding.js owner=mongod group=mongod
+
+- name: copy the file enable  sharding
+  template: src=enablesharding.j2 dest=/tmp/enablesharding.js owner=mongod group=mongod
+
+
+########### Read/Write test
+- name: copy the file to test writes
+  template: src=mongo_write.j2 dest=/tmp/mongo_write.js owner=mongod group=mongod
+
+- name: copy the file to test reads
+  template: src=mongo_read.j2 dest=/tmp/mongo_read.js owner=mongod group=mongod
+
+- name: "Configure write to run every 2 minute"
+  cron:
+    minute: "*/2"
+    job: "mongo --nodb /tmp/mongo_write.js  &"
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['mongos_servers'] }}"
+  tags: mongo_load_test
+
+- name: "Configure read to run every 1 minute"
+  cron:
+    minute: "*/1"
+    job: "mongo --nodb /tmp/mongo_read.js &"
+  become: true
+  delegate_to: '{{ item }}'
+  with_items: "{{ groups['mongos_servers'] }}"
+  tags: mongo_load_test

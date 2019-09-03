@@ -1,0 +1,9 @@
+---
+# tasks file for provision/roles/percona-repo
+
+# Setup Percona repository
+
+- name: Install Percona repository
+  yum:
+    name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+    state: present

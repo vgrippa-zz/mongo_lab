@@ -1,0 +1,14 @@
+---
+# tasks file for provision/roles/pmm-server
+
+- name: Download PMM server install script
+  get_url:
+    url: https://raw.githubusercontent.com/percona/pmm/master/get-pmm.sh
+    dest: /root/get-pmm.sh
+    mode: 0700
+
+- name: Execute PMM install script
+  command: "/bin/sh get-pmm.sh"
+  args:
+    chdir: /root  
+ 

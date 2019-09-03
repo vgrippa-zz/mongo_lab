@@ -1,0 +1,30 @@
+systemLog:
+   destination: file
+   path: "/var/log/mongo/mongos.log"
+   logAppend: true
+
+processManagement:
+   fork: true
+   pidFilePath: /var/run/mongo/mongos-{{ inventory_hostname }}.pid
+
+net:
+  port : {{ mongos_port }}
+  bindIp: {{ inventory_hostname }}
+  bindIpAll : true
+  unixDomainSocket:
+      enabled: true
+      pathPrefix: {{ mongodb_datadir_prefix }}
+
+sharding:
+{% set hosts = '' %}
+ {% for host in groups['mongoc_servers'] %}
+   {% if loop.last %}
+      {% set hosts = hosts + host + ':' ~ mongoc_port  %}
+       configDB : rs_cfg/{{ hosts }}
+      {% else %}
+        {% set hosts = hosts + host + ':' ~ mongoc_port + ','  %}
+   {% endif %}
+ {% endfor %}
+
+security:
+   keyFile: "{{ mongodb_datadir_prefix }}secret"

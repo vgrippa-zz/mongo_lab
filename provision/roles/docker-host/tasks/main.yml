@@ -1,0 +1,23 @@
+---
+# tasks file for provision/roles/docker-host
+
+- name: Add Docker repository
+  yum_repository:
+    name: docker
+    description: Docker CE repository
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    gpgcheck: yes
+    baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/ 
+    state: present
+
+- name: Install Docker
+  yum:
+    name: ['docker-ce']
+    state: latest
+
+- name: Start Docker daemon
+  service:
+    name: docker
+    state: started
+    enabled: yes
+

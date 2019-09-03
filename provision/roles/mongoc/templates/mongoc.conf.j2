@@ -1,0 +1,26 @@
+systemLog:
+   destination: file
+   path: "/var/log/mongo/mongod-config.log"
+   logAppend: true
+
+processManagement:
+   fork: true
+   pidFilePath: /var/run/mongo/mongoc.pid
+
+# Replication Options
+replication:
+  replSetName: "rs_cfg"
+
+net:
+  port : {{ mongoc_port }}
+  bindIpAll : true
+
+storage:
+  dbPath: {{ mongodb_datadir_prefix }}configdb
+
+sharding:
+   clusterRole: configsvr
+
+security:
+   keyFile: "{{ mongodb_datadir_prefix }}secret"
+
