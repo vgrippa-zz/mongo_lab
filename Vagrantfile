@@ -6,7 +6,8 @@ Vagrant.configure("2") do |config|
   config.vm.box = "centos/7"
   config.ssh.forward_agent = true
   config.ssh.insert_key = false
-############# Postgres ######################
+  
+
   config.vm.define "main-server" do |server|
     server.vm.hostname = 'main-server'
     server.vm.network :private_network, ip: '10.0.0.13'
@@ -17,43 +18,6 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define "pg-master" do |server|
-    server.vm.hostname = 'pg-master'
-    server.vm.network :private_network, ip: '10.0.0.10'
-  end
-
-  config.vm.define "pg-replica" do |server|
-    server.vm.hostname = 'pg-replica'
-    server.vm.network :private_network, ip: '10.0.0.11'
-  end
-
-  config.vm.define "pxc-node1" do |server|
-    server.vm.hostname = 'pxc-node1'
-    server.vm.network :private_network, ip: '10.0.0.21'
-  end
-
-  config.vm.define "pxc-node2" do |server|
-    server.vm.hostname = 'pxc-node2'
-    server.vm.network :private_network, ip: '10.0.0.22'
-  end
-
-  config.vm.define "pxc-node3" do |server|
-    server.vm.hostname = 'pxc-node3'
-    server.vm.network :private_network, ip: '10.0.0.23'
-  end
-
-  config.vm.define "mysql-replica" do |server|
-    server.vm.hostname = 'mysql-replica'
-    server.vm.network :private_network, ip: '10.0.0.24'
-  end
-
-  config.vm.define "app-server" do |server|
-    server.vm.hostname = 'app-server'
-    server.vm.network :private_network, ip: '10.0.0.12'
-    server.vm.provider "virtualbox" do |v|
-      v.cpus = 3
-    end
-  end
 
   config.vm.provision "ansible" do |ansible|
     ansible.verbose = "v"
